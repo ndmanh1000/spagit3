@@ -9,7 +9,8 @@
       "Bash(node -e \"const XLSX = require\\('xlsx'\\); const wb = XLSX.readFile\\('c:/Users/NdManh/Downloads/manh2.xlsx'\\); const sheet = wb.Sheets[wb.SheetNames[0]]; const data = XLSX.utils.sheet_to_json\\(sheet\\); console.log\\('Sheet name:', wb.SheetNames[0]\\); console.log\\('Columns:', Object.keys\\(data[0] || {}\\)\\); console.log\\('First 3 rows:', JSON.stringify\\(data.slice\\(0, 3\\), null, 2\\)\\);\")",
       "Bash(node *)",
       "Bash(curl *)",
-      "Bash(pkill -f \"next dev\")"
+      "Bash(pkill -f \"next dev\")",
+      "Bash(git rm *)"
     ]
   }
 }

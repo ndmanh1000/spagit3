@@ -578,4 +578,5 @@ textarea.inp { resize: vertical; }
   .page-content { padding: 12px 12px; }
   .section-block { padding: 16px; }
   .modal-box { padding: 20px; }
+  .inp { font-size: 16px; }
 }

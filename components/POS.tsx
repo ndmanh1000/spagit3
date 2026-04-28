@@ -72,7 +72,7 @@ export default function POSPage() {
   };
 
   return (
-    <div>
+    <div className="pb-4">
       {toast && <Toast message={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
 
       {/* Section 1 */}
@@ -81,9 +81,9 @@ export default function POSPage() {
           <div className="section-badge">1</div>
           <span className="section-title">Thông Tin Khách Hàng</span>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14 }}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <FL label="Ngày tạo đơn"><input type="date" className="inp" value={date} onChange={e => setDate(e.target.value)} /></FL>
-          <div style={{ position: "relative" }}>
+          <div className="relative">
             <FL label="SĐT Khách *">
               <input className="inp" placeholder="Nhập số điện thoại" value={phone}
                 onChange={e => { setPhone(e.target.value); lookup(e.target.value); }}
@@ -96,7 +96,7 @@ export default function POSPage() {
                     <strong style={{ color: "var(--rose)" }}>{c.phone}</strong>
                     <span style={{ color: "var(--text-3)", margin: "0 6px" }}>·</span>
                     {c.name}
-                    {c.debt > 0 && <span className="badge badge-red" style={{ marginLeft: 8, fontSize: "0.6rem" }}>Nợ {fmt(c.debt)}</span>}
+                    {c.debt > 0 && <span className="badge badge-red ml-2 text-[0.6rem]">Nợ {fmt(c.debt)}</span>}
                   </div>
                 ))}
               </div>
@@ -114,27 +114,27 @@ export default function POSPage() {
 
       {/* Section 2 */}
       <div className="section-block">
-        <div className="section-header">
+        <div className="section-header flex-wrap gap-2">
           <div className="section-badge">2</div>
           <span className="section-title">Chi Tiết Dịch Vụ</span>
-          <button className="btn-outline" onClick={() => setServices(p => [...p, { id: `s${Date.now()}`, typeId: "", typeName: "", detailId: "", detailName: "", sessions: 1, price: 0, total: 0 }])} style={{ marginLeft: "auto", fontSize: "0.78rem", padding: "6px 14px" }}>
+          <button className="btn-outline ml-auto text-[0.78rem] px-3 py-1.5" onClick={() => setServices(p => [...p, { id: `s${Date.now()}`, typeId: "", typeName: "", detailId: "", detailName: "", sessions: 1, price: 0, total: 0 }])}>
             + Thêm dịch vụ
           </button>
         </div>
         {services.map((svc, idx) => (
           <div key={svc.id} className="svc-row">
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-              <span style={{ fontSize: "0.67rem", fontWeight: 700, color: "var(--rose)", background: "var(--rose-light)", padding: "2px 8px", borderRadius: 5, textTransform: "uppercase", letterSpacing: "0.5px" }}>Dịch vụ {idx + 1}</span>
-              {services.length > 1 && <button className="btn-danger" onClick={() => setServices(p => p.filter((_, i) => i !== idx))} style={{ marginLeft: "auto", fontSize: "0.7rem" }}>✕ Xóa</button>}
+            <div className="flex items-center gap-2 mb-3 flex-wrap">
+              <span className="text-[0.67rem] font-bold text-[var(--rose)] bg-[var(--rose-light)] px-2 py-0.5 rounded uppercase tracking-wide">Dịch vụ {idx + 1}</span>
+              {services.length > 1 && <button className="btn-danger ml-auto text-[0.7rem]" onClick={() => setServices(p => p.filter((_, i) => i !== idx))}>✕ Xóa</button>}
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12, marginBottom: 12 }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
               <FL label="Loại Dịch Vụ">
                 <select className="inp" value={svc.typeId} onChange={e => updateSvc(idx, "typeId", e.target.value)}>
                   <option value="">— Chọn loại —</option>
                   {serviceTypes.map(st => <option key={st.id} value={st.id}>{st.name}</option>)}
                 </select>
               </FL>
-              <div style={{ gridColumn: "span 2" }}>
+              <div className="sm:col-span-2">
                 <FL label="Chi Tiết Dịch Vụ">
                   <select className="inp" value={svc.detailId} onChange={e => updateSvc(idx, "detailId", e.target.value)} disabled={!svc.typeId}>
                     <option value="">— Chọn dịch vụ —</option>
@@ -145,7 +145,7 @@ export default function POSPage() {
                 </FL>
               </div>
               <FL label="Số buổi">
-                <input type="number" className="inp" min={1} value={svc.sessions} onChange={e => updateSvc(idx, "sessions", e.target.value)} style={{ textAlign: "center" }} />
+                <input type="number" className="inp text-center" min={1} value={svc.sessions} onChange={e => updateSvc(idx, "sessions", e.target.value)} />
               </FL>
             </div>
             <FL label="Thành tiền">
@@ -163,39 +163,38 @@ export default function POSPage() {
           <div className="section-badge">3</div>
           <span className="section-title">Thanh Toán</span>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 16 }}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           <FL label="Tổng tiền hàng">
-            <div style={{ fontSize: "1.1rem", fontWeight: 800, color: "var(--text-1)", padding: "9px 0" }}>{fmt(totalAmount)}</div>
+            <div className="text-lg font-extrabold text-[var(--text-1)] py-2">{fmt(totalAmount)}</div>
           </FL>
           <div>
             <FL label="Giảm giá đơn">
-              <div style={{ display: "flex", gap: 6 }}>
-                <input type="number" className="inp" value={discount || ""} placeholder="0" onChange={e => setDiscount(Number(e.target.value))} style={{ flex: 1 }} />
-                <select className="inp" value={discountType} onChange={e => setDiscountType(e.target.value as "VND" | "%")} style={{ width: 64 }}>
+              <div className="flex gap-1.5">
+                <input type="number" className="inp flex-1" value={discount || ""} placeholder="0" onChange={e => setDiscount(Number(e.target.value))} />
+                <select className="inp w-20 sm:w-16" value={discountType} onChange={e => setDiscountType(e.target.value as "VND" | "%")}>
                   <option value="VND">VND</option><option value="%">%</option>
                 </select>
               </div>
             </FL>
           </div>
           <FL label="Cần thu">
-            <div style={{ fontSize: "1.1rem", fontWeight: 800, color: "var(--rose)", padding: "9px 0" }}>{fmt(mustPay)}</div>
+            <div className="text-lg font-extrabold text-[var(--rose)] py-2">{fmt(mustPay)}</div>
           </FL>
           <FL label="Thực thu">
-            <input className="inp" placeholder="Nhập số tiền" value={actualPaid} onChange={e => setActualPaid(e.target.value)}
-              style={{ border: "1.5px solid var(--teal)", background: "var(--teal-light)" }} />
+            <input className="inp border-[1.5px] border-[var(--teal)] bg-[var(--teal-light)]" placeholder="Nhập số tiền" value={actualPaid} onChange={e => setActualPaid(e.target.value)} />
           </FL>
           <FL label="Còn nợ">
-            <div style={{ fontSize: "1.1rem", fontWeight: 800, color: debt > 0 ? "var(--red)" : "var(--teal)", padding: "9px 0" }}>{fmt(debt)}</div>
+            <div className="text-lg font-extrabold py-2" style={{ color: debt > 0 ? "var(--red)" : "var(--teal)" }}>{fmt(debt)}</div>
           </FL>
         </div>
       </div>
 
       {/* Note */}
-      <div className="section-block" style={{ padding: "16px 20px", marginBottom: 20 }}>
-        <textarea className="inp" placeholder="📝  Ghi chú đơn hàng..." value={note} onChange={e => setNote(e.target.value)} style={{ minHeight: 60, fontSize: "0.84rem" }} />
+      <div className="section-block p-4 sm:p-5 mb-5">
+        <textarea className="inp min-h-[60px] text-sm" placeholder="📝  Ghi chú đơn hàng..." value={note} onChange={e => setNote(e.target.value)} />
       </div>
 
-      <button className="btn-primary" onClick={submit} disabled={loading} style={{ width: "100%", padding: "13px", fontSize: "0.9rem", borderRadius: 11, justifyContent: "center" }}>
+      <button className="btn-primary w-full py-3 text-sm rounded-[11px] justify-center" onClick={submit} disabled={loading}>
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 8h12M8 2l6 6-6 6" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
         {loading ? "Đang xử lý..." : "Tạo Đơn Hàng"}
       </button>

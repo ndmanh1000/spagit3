@@ -1,4 +1,27 @@
-// In-memory database (replace with real DB in production)
+import fs from 'fs';
+import path from 'path';
+
+const DB_FILE = path.join(process.cwd(), 'data.json');
+
+function saveDB(data: any) {
+  try {
+    fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
+  } catch (e) {
+    console.error('Failed to save DB:', e);
+  }
+}
+
+function loadDB() {
+  try {
+    if (fs.existsSync(DB_FILE)) {
+      return JSON.parse(fs.readFileSync(DB_FILE, 'utf-8'));
+    }
+  } catch (e) {
+    console.error('Failed to load DB:', e);
+  }
+  return null;
+}
+
 export interface Customer {
   id: string;
   name: string;
@@ -77,6 +100,12 @@ declare global {
 
 function initDB() {
   if (global.__db) return global.__db;
+
+  const saved = loadDB();
+  if (saved) {
+    global.__db = saved;
+    return global.__db;
+  }
 
   const serviceTypes: ServiceType[] = [
     {
@@ -183,6 +212,7 @@ function initDB() {
   ];
 
   global.__db = { customers, orders, transactions, serviceTypes, channels: ['Facebook', 'Zalo', 'TikTok', 'Instagram', 'Khách vãng lai', 'Giới thiệu'] };
+  saveDB(global.__db);
   return global.__db;
 }
 
@@ -193,9 +223,9 @@ export const db = {
   get serviceTypes() { return initDB().serviceTypes; },
   get channels() { return initDB().channels; },
 
-  addOrder(order: Order) { initDB().orders.unshift(order); },
-  addTransaction(tx: Transaction) { initDB().transactions.unshift(tx); },
-  addCustomer(c: Customer) { initDB().customers.push(c); },
+  addOrder(order: Order) { initDB().orders.unshift(order); saveDB(global.__db); },
+  addTransaction(tx: Transaction) { initDB().transactions.unshift(tx); saveDB(global.__db); },
+  addCustomer(c: Customer) { initDB().customers.push(c); saveDB(global.__db); },
 
   findOrCreateCustomer(phone: string, name: string): Customer {
     const db = initDB();
@@ -210,8 +240,10 @@ export const db = {
         debt: 0,
       };
       db.customers.push(customer);
+      saveDB(global.__db);
     } else {
       customer.name = name;
+      saveDB(global.__db);
     }
     return customer;
   },
@@ -222,6 +254,7 @@ export const db = {
     if (c) {
       c.totalSpent += paid;
       c.debt += debt;
+      saveDB(global.__db);
     }
   },
 
@@ -231,20 +264,22 @@ export const db = {
     if (c) {
       c.debt = Math.max(0, c.debt - amount);
       c.totalSpent += amount;
+      saveDB(global.__db);
     }
   },
 
-  addServiceType(st: ServiceType) { initDB().serviceTypes.push(st); },
+  addServiceType(st: ServiceType) { initDB().serviceTypes.push(st); saveDB(global.__db); },
   addServiceDetail(typeId: string, detail: ServiceDetail) {
     const st = initDB().serviceTypes.find(s => s.id === typeId);
-    if (st) st.details.push(detail);
+    if (st) { st.details.push(detail); saveDB(global.__db); }
   },
   deleteServiceType(typeId: string) {
     const db = initDB();
     db.serviceTypes = db.serviceTypes.filter(s => s.id !== typeId);
+    saveDB(global.__db);
   },
   deleteServiceDetail(typeId: string, detailId: string) {
     const st = initDB().serviceTypes.find(s => s.id === typeId);
-    if (st) st.details = st.details.filter(d => d.id !== detailId);
+    if (st) { st.details = st.details.filter(d => d.id !== detailId); saveDB(global.__db); }
   },
 };

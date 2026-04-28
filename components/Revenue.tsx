@@ -1,6 +1,8 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { fmt, fmtShort } from "@/lib/utils";
+import ImportCustomers from "./ImportCustomers";
+import CustomerHistory from "./CustomerHistory";
 interface RevenueData { totalRevenue: number; totalDebt: number; totalOrders: number; totalCustomers: number; byDay: Record<string, number>; byService: Record<string, number>; byChannel: Record<string, number>; topCustomers: { name: string; phone: string; spent: number; orders: number }[]; debtCustomers: { id: string; name: string; phone: string; debt: number }[]; }
 declare global { interface Window { Chart: any; } }
 const COLORS = ["#d4547a", "#3b82f6", "#0ea882", "#f59e0b", "#8b5cf6", "#ef4444"];
@@ -14,6 +16,7 @@ export default function RevenuePage() {
   const [data, setData] = useState<RevenueData | null>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"overview" | "customers" | "debt">("overview");
+  const [selectedCustomer, setSelectedCustomer] = useState<{ phone: string; name: string } | null>(null);
   const lineRef = useRef<HTMLCanvasElement>(null);
   const donutRef = useRef<HTMLCanvasElement>(null);
   const lineChart = useRef<any>(null);
@@ -152,24 +155,31 @@ export default function RevenuePage() {
           </div>
         )}
         {tab === "customers" && (
-          <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-            <div className="overflow-x-auto">
-            <table className="tbl">
-              <thead><tr><th>#</th><th>Khách Hàng</th><th className="hidden sm:table-cell">SĐT</th><th className="hidden md:table-cell">Số Đơn</th><th>Tổng Chi</th></tr></thead>
-              <tbody>
-                {data.topCustomers.map((c, i) => (
-                  <tr key={c.phone}>
-                    <td style={{ fontWeight: 700, color: i < 3 ? "var(--rose)" : "var(--text-4)" }}>{i + 1}{i === 0 ? " 👑" : ""}</td>
-                    <td style={{ fontWeight: 600, color: "var(--text-1)" }}>{c.name}</td>
-                    <td className="hidden sm:table-cell" style={{ color: "var(--text-3)", fontFamily: "monospace", fontSize: "0.8rem" }}>{c.phone}</td>
-                    <td className="hidden md:table-cell"><span className="badge badge-blue">{c.orders} đơn</span></td>
-                    <td style={{ fontWeight: 800, color: "var(--rose)" }}>{fmt(c.spent)}</td>
-                  </tr>
-                ))}
-                {data.topCustomers.length === 0 && <tr><td colSpan={5} style={{ textAlign: "center", padding: 40, color: "var(--text-4)" }}>Chưa có dữ liệu</td></tr>}
-              </tbody>
-            </table>
+          <div>
+            <div className="flex justify-end mb-3">
+              <ImportCustomers onSuccess={load} />
             </div>
+            <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+              <div className="overflow-x-auto">
+              <table className="tbl">
+                <thead><tr><th>#</th><th>Khách Hàng</th><th className="hidden sm:table-cell">SĐT</th><th className="hidden md:table-cell">Số Đơn</th><th>Tổng Chi</th><th></th></tr></thead>
+                <tbody>
+                  {data.topCustomers.map((c, i) => (
+                    <tr key={c.phone}>
+                      <td style={{ fontWeight: 700, color: i < 3 ? "var(--rose)" : "var(--text-4)" }}>{i + 1}{i === 0 ? " 👑" : ""}</td>
+                      <td style={{ fontWeight: 600, color: "var(--text-1)" }}>{c.name}</td>
+                      <td className="hidden sm:table-cell" style={{ color: "var(--text-3)", fontFamily: "monospace", fontSize: "0.8rem" }}>{c.phone}</td>
+                      <td className="hidden md:table-cell"><span className="badge badge-blue">{c.orders} đơn</span></td>
+                      <td style={{ fontWeight: 800, color: "var(--rose)" }}>{fmt(c.spent)}</td>
+                      <td><button className="btn-ghost text-xs px-2 py-1" onClick={() => setSelectedCustomer({ phone: c.phone, name: c.name })}>Xem</button></td>
+                    </tr>
+                  ))}
+                  {data.topCustomers.length === 0 && <tr><td colSpan={6} style={{ textAlign: "center", padding: 40, color: "var(--text-4)" }}>Chưa có dữ liệu</td></tr>}
+                </tbody>
+              </table>
+              </div>
+            </div>
+            {selectedCustomer && <CustomerHistory phone={selectedCustomer.phone} name={selectedCustomer.name} onClose={() => setSelectedCustomer(null)} />}
           </div>
         )}
         {tab === "debt" && (

@@ -38,6 +38,15 @@ export default function POSPage() {
   const paid = parseFloat(actualPaid.replace(/[^0-9]/g, "")) || 0;
   const debt = Math.max(0, mustPay - paid);
 
+  const formatMoney = (val: string) => {
+    const num = val.replace(/[^0-9]/g, "");
+    return num ? parseInt(num).toLocaleString("vi-VN") : "";
+  };
+
+  const handlePaidChange = (val: string) => {
+    setActualPaid(formatMoney(val));
+  };
+
   const lookup = useCallback((p: string) => {
     if (p.length < 5) { setSuggestions([]); return; }
     api(`/api/customers?q=${p}`).then(d => {
@@ -61,6 +70,7 @@ export default function POSPage() {
     if (!phone || !customerName) { setToast({ msg: "Vui lòng nhập SĐT và tên khách hàng", type: "error" }); return; }
     const validSvcs = services.filter(s => s.detailId);
     if (!validSvcs.length) { setToast({ msg: "Vui lòng chọn ít nhất 1 dịch vụ", type: "error" }); return; }
+    if (paid > mustPay) { setToast({ msg: "Số tiền thực thu không được lớn hơn số tiền cần thu", type: "error" }); return; }
     setLoading(true);
     try {
       await api("/api/orders", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ customerName, customerPhone: phone, channel, services: validSvcs, discount, discountType, actualPaid: paid, note, date }) });
@@ -181,7 +191,7 @@ export default function POSPage() {
             <div className="text-lg font-extrabold text-[var(--rose)] py-2">{fmt(mustPay)}</div>
           </FL>
           <FL label="Thực thu">
-            <input className="inp border-[1.5px] border-[var(--teal)] bg-[var(--teal-light)]" placeholder="Nhập số tiền" value={actualPaid} onChange={e => setActualPaid(e.target.value)} />
+            <input className="inp border-[1.5px] border-[var(--teal)] bg-[var(--teal-light)]" placeholder="Nhập số tiền" value={actualPaid} onChange={e => handlePaidChange(e.target.value)} />
           </FL>
           <FL label="Còn nợ">
             <div className="text-lg font-extrabold py-2" style={{ color: debt > 0 ? "var(--red)" : "var(--teal)" }}>{fmt(debt)}</div>

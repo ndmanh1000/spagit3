@@ -14,8 +14,9 @@ export default function RevenuePage() {
   const [from, setFrom] = useState(firstDay);
   const [to, setTo] = useState(todayStr);
   const [data, setData] = useState<RevenueData | null>(null);
+  const [allCustomers, setAllCustomers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<"overview" | "customers" | "debt">("overview");
+  const [tab, setTab] = useState<"overview" | "customers" | "debt" | "all-customers">("overview");
   const [selectedCustomer, setSelectedCustomer] = useState<{ phone: string; name: string } | null>(null);
   const lineRef = useRef<HTMLCanvasElement>(null);
   const donutRef = useRef<HTMLCanvasElement>(null);
@@ -23,8 +24,12 @@ export default function RevenuePage() {
   const donutChart = useRef<any>(null);
   const scriptLoaded = useRef(false);
 
-  const load = () => { setLoading(true); fetch(`/api/revenue?from=${from}&to=${to}`).then(r => r.json()).then(d => { setData(d); setLoading(false); }); };
-  useEffect(() => { load(); }, []);// eslint-disable-line
+  const load = () => {
+    setLoading(true);
+    fetch(`/api/revenue?from=${from}&to=${to}`).then(r => r.json()).then(d => { setData(d); setLoading(false); });
+    fetch('/api/customers/all').then(r => r.json()).then(d => setAllCustomers(d.customers));
+  };
+  useEffect(() => { load(); }, [from, to]);// eslint-disable-line
 
   useEffect(() => {
     if (!data || tab !== "overview") return;
@@ -101,9 +106,9 @@ export default function RevenuePage() {
         </div>
 
         <div className="tab-bar">
-          {(["overview", "customers", "debt"] as const).map(t => (
+          {(["overview", "customers", "all-customers", "debt"] as const).map(t => (
             <button key={t} className={`tab-btn${tab === t ? " active" : ""}`} onClick={() => setTab(t)}>
-              {t === "overview" ? "📈 Tổng Quan" : t === "customers" ? "👑 Khách Hàng" : "📌 Công Nợ"}
+              {t === "overview" ? "📈 Tổng Quan" : t === "customers" ? "👑 Top Khách Hàng" : t === "all-customers" ? "📋 Danh Sách Khách Hàng" : "📌 Công Nợ"}
             </button>
           ))}
         </div>
@@ -155,6 +160,28 @@ export default function RevenuePage() {
           </div>
         )}
         {tab === "customers" && (
+          <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+            <div className="overflow-x-auto">
+            <table className="tbl">
+              <thead><tr><th>#</th><th>Khách Hàng</th><th className="hidden sm:table-cell">SĐT</th><th className="hidden md:table-cell">Số Đơn</th><th>Tổng Chi</th><th></th></tr></thead>
+              <tbody>
+                {data.topCustomers.map((c, i) => (
+                  <tr key={c.phone}>
+                    <td style={{ fontWeight: 700, color: i < 3 ? "var(--rose)" : "var(--text-4)" }}>{i + 1}{i === 0 ? " 👑" : ""}</td>
+                    <td style={{ fontWeight: 600, color: "var(--text-1)" }}>{c.name}</td>
+                    <td className="hidden sm:table-cell" style={{ color: "var(--text-3)", fontFamily: "monospace", fontSize: "0.8rem" }}>{c.phone}</td>
+                    <td className="hidden md:table-cell"><span className="badge badge-blue">{c.orders} đơn</span></td>
+                    <td style={{ fontWeight: 800, color: "var(--rose)" }}>{fmt(c.spent)}</td>
+                    <td><button className="btn-ghost text-xs px-2 py-1" onClick={() => setSelectedCustomer({ phone: c.phone, name: c.name })}>Xem</button></td>
+                  </tr>
+                ))}
+                {data.topCustomers.length === 0 && <tr><td colSpan={6} style={{ textAlign: "center", padding: 40, color: "var(--text-4)" }}>Chưa có dữ liệu</td></tr>}
+              </tbody>
+            </table>
+            </div>
+          </div>
+        )}
+        {tab === "all-customers" && (
           <div>
             <div className="flex justify-end mb-3">
               <ImportCustomers onSuccess={load} />
@@ -162,19 +189,18 @@ export default function RevenuePage() {
             <div className="card" style={{ padding: 0, overflow: "hidden" }}>
               <div className="overflow-x-auto">
               <table className="tbl">
-                <thead><tr><th>#</th><th>Khách Hàng</th><th className="hidden sm:table-cell">SĐT</th><th className="hidden md:table-cell">Số Đơn</th><th>Tổng Chi</th><th></th></tr></thead>
+                <thead><tr><th>Khách Hàng</th><th className="hidden sm:table-cell">SĐT</th><th>Tổng Chi</th><th className="hidden md:table-cell">Công Nợ</th><th></th></tr></thead>
                 <tbody>
-                  {data.topCustomers.map((c, i) => (
-                    <tr key={c.phone}>
-                      <td style={{ fontWeight: 700, color: i < 3 ? "var(--rose)" : "var(--text-4)" }}>{i + 1}{i === 0 ? " 👑" : ""}</td>
+                  {allCustomers.map(c => (
+                    <tr key={c.id}>
                       <td style={{ fontWeight: 600, color: "var(--text-1)" }}>{c.name}</td>
                       <td className="hidden sm:table-cell" style={{ color: "var(--text-3)", fontFamily: "monospace", fontSize: "0.8rem" }}>{c.phone}</td>
-                      <td className="hidden md:table-cell"><span className="badge badge-blue">{c.orders} đơn</span></td>
-                      <td style={{ fontWeight: 800, color: "var(--rose)" }}>{fmt(c.spent)}</td>
+                      <td style={{ fontWeight: 700, color: "var(--rose)" }}>{fmt(c.totalSpent)}</td>
+                      <td className="hidden md:table-cell" style={{ fontWeight: 700, color: c.debt > 0 ? "var(--red)" : "var(--text-4)" }}>{fmt(c.debt)}</td>
                       <td><button className="btn-ghost text-xs px-2 py-1" onClick={() => setSelectedCustomer({ phone: c.phone, name: c.name })}>Xem</button></td>
                     </tr>
                   ))}
-                  {data.topCustomers.length === 0 && <tr><td colSpan={6} style={{ textAlign: "center", padding: 40, color: "var(--text-4)" }}>Chưa có dữ liệu</td></tr>}
+                  {allCustomers.length === 0 && <tr><td colSpan={5} style={{ textAlign: "center", padding: 40, color: "var(--text-4)" }}>Chưa có khách hàng</td></tr>}
                 </tbody>
               </table>
               </div>

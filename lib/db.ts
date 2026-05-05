@@ -1,25 +1,22 @@
-import fs from 'fs';
-import path from 'path';
+import { Pool } from 'pg';
+import { initDatabase } from './init-db';
 
-const DB_FILE = path.join(process.cwd(), 'data.json');
+const pool = new Pool({
+  connectionString: process.env.POSTGRES_URL,
+  ssl: { rejectUnauthorized: false }
+});
 
-function saveDB(data: any) {
-  try {
-    fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
-  } catch (e) {
-    console.error('Failed to save DB:', e);
+let initPromise: Promise<void> | null = null;
+let dbAvailable = true;
+
+async function ensureInitialized() {
+  if (!initPromise) {
+    initPromise = initDatabase(pool).catch((err) => {
+      console.error('Database not available, using mock data:', err.message);
+      dbAvailable = false;
+    });
   }
-}
-
-function loadDB() {
-  try {
-    if (fs.existsSync(DB_FILE)) {
-      return JSON.parse(fs.readFileSync(DB_FILE, 'utf-8'));
-    }
-  } catch (e) {
-    console.error('Failed to load DB:', e);
-  }
-  return null;
+  await initPromise;
 }
 
 export interface Customer {
@@ -86,200 +83,245 @@ export interface Transaction {
   createdAt: string;
 }
 
-// Global in-memory store
-declare global {
-  // eslint-disable-next-line no-var
-  var __db: {
-    customers: Customer[];
-    orders: Order[];
-    transactions: Transaction[];
-    serviceTypes: ServiceType[];
-    channels: string[];
-  } | undefined;
-}
-
-function initDB() {
-  if (global.__db) return global.__db;
-
-  const saved = loadDB();
-  if (saved) {
-    global.__db = saved;
-    return global.__db;
-  }
-
-  const serviceTypes: ServiceType[] = [
-    {
-      id: 'st1',
-      name: 'Chăm Sóc Da Mặt',
-      details: [
-        { id: 'sd1', name: 'Basic Facial 60 phút', price: 350000 },
-        { id: 'sd2', name: 'Premium Facial 90 phút', price: 550000 },
-        { id: 'sd3', name: 'Trị Mụn Chuyên Sâu', price: 450000 },
-        { id: 'sd4', name: 'Nâng Cơ RF', price: 800000 },
-      ],
-    },
-    {
-      id: 'st2',
-      name: 'Triệt Lông',
-      details: [
-        { id: 'sd5', name: 'Triệt Lông Nách', price: 300000 },
-        { id: 'sd6', name: 'Triệt Lông Chân (Full)', price: 1200000 },
-        { id: 'sd7', name: 'Triệt Lông Bikini', price: 500000 },
-        { id: 'sd8', name: 'Triệt Lông Tay (Full)', price: 900000 },
-      ],
-    },
-    {
-      id: 'st3',
-      name: 'Massage & Thư Giãn',
-      details: [
-        { id: 'sd9', name: 'Massage Toàn Thân 60 phút', price: 400000 },
-        { id: 'sd10', name: 'Massage Thụy Điển 90 phút', price: 650000 },
-        { id: 'sd11', name: 'Đá Nóng Massage', price: 750000 },
-      ],
-    },
-    {
-      id: 'st4',
-      name: 'Điều Trị Cơ Thể',
-      details: [
-        { id: 'sd12', name: 'Giảm Béo Vùng Bụng', price: 600000 },
-        { id: 'sd13', name: 'Nâng Ngực Không Phẫu Thuật', price: 900000 },
-        { id: 'sd14', name: 'Tắm Trắng Toàn Thân', price: 500000 },
-      ],
-    },
-    {
-      id: 'st5',
-      name: 'Nail & Tóc',
-      details: [
-        { id: 'sd15', name: 'Làm Nail Tay + Chân', price: 350000 },
-        { id: 'sd16', name: 'Uốn Tóc', price: 700000 },
-        { id: 'sd17', name: 'Nhuộm Tóc', price: 800000 },
-      ],
-    },
-  ];
-
-  const customers: Customer[] = [
-    { id: 'c1', name: 'Nguyễn Thị Lan', phone: '0901234567', createdAt: '2024-01-15', totalSpent: 5600000, debt: 0 },
-    { id: 'c2', name: 'Trần Thị Mai', phone: '0912345678', createdAt: '2024-02-20', totalSpent: 3200000, debt: 500000 },
-    { id: 'c3', name: 'Lê Thị Hoa', phone: '0923456789', createdAt: '2024-03-10', totalSpent: 8900000, debt: 0 },
-  ];
-
-  const orders: Order[] = [
-    {
-      id: 'o1',
-      date: '2026-04-25',
-      customerId: 'c1',
-      customerName: 'Nguyễn Thị Lan',
-      customerPhone: '0901234567',
-      channel: 'Facebook',
-      services: [
-        { id: 'os1', typeId: 'st1', typeName: 'Chăm Sóc Da Mặt', detailId: 'sd2', detailName: 'Premium Facial 90 phút', sessions: 3, price: 550000, total: 1650000 },
-      ],
-      totalAmount: 1650000,
-      discount: 0,
-      discountType: 'VND',
-      mustPay: 1650000,
-      actualPaid: 1650000,
-      debt: 0,
-      note: '',
-      status: 'paid',
-      createdAt: '2026-04-25T10:00:00',
-    },
-    {
-      id: 'o2',
-      date: '2026-04-26',
-      customerId: 'c2',
-      customerName: 'Trần Thị Mai',
-      customerPhone: '0912345678',
-      channel: 'Zalo',
-      services: [
-        { id: 'os2', typeId: 'st2', typeName: 'Triệt Lông', detailId: 'sd6', detailName: 'Triệt Lông Chân (Full)', sessions: 1, price: 1200000, total: 1200000 },
-      ],
-      totalAmount: 1200000,
-      discount: 0,
-      discountType: 'VND',
-      mustPay: 1200000,
-      actualPaid: 700000,
-      debt: 500000,
-      note: 'Khách sẽ thanh toán phần còn lại sau',
-      status: 'partial',
-      createdAt: '2026-04-26T14:30:00',
-    },
-  ];
-
-  const transactions: Transaction[] = [
-    { id: 't1', date: '2026-04-25', customerId: 'c1', customerName: 'Nguyễn Thị Lan', customerPhone: '0901234567', amount: 1650000, type: 'payment', orderId: 'o1', note: 'Thanh toán đơn hàng Premium Facial', createdAt: '2026-04-25T10:05:00' },
-    { id: 't2', date: '2026-04-26', customerId: 'c2', customerName: 'Trần Thị Mai', customerPhone: '0912345678', amount: 700000, type: 'payment', orderId: 'o2', note: 'Thanh toán một phần', createdAt: '2026-04-26T14:35:00' },
-  ];
-
-  global.__db = { customers, orders, transactions, serviceTypes, channels: ['Facebook', 'Zalo', 'TikTok', 'Instagram', 'Khách vãng lai', 'Giới thiệu'] };
-  saveDB(global.__db);
-  return global.__db;
-}
-
 export const db = {
-  get customers() { return initDB().customers; },
-  get orders() { return initDB().orders; },
-  get transactions() { return initDB().transactions; },
-  get serviceTypes() { return initDB().serviceTypes; },
-  get channels() { return initDB().channels; },
-
-  addOrder(order: Order) { initDB().orders.unshift(order); saveDB(global.__db); },
-  addTransaction(tx: Transaction) { initDB().transactions.unshift(tx); saveDB(global.__db); },
-  addCustomer(c: Customer) { initDB().customers.push(c); saveDB(global.__db); },
-
-  findOrCreateCustomer(phone: string, name: string): Customer {
-    const db = initDB();
-    let customer = db.customers.find(c => c.phone === phone);
-    if (!customer) {
-      customer = {
-        id: `c${Date.now()}`,
-        name,
-        phone,
-        createdAt: new Date().toISOString().split('T')[0],
-        totalSpent: 0,
-        debt: 0,
-      };
-      db.customers.push(customer);
-      saveDB(global.__db);
-    } else {
-      customer.name = name;
-      saveDB(global.__db);
+  async getCustomers(query?: string): Promise<Customer[]> {
+    await ensureInitialized();
+    if (!dbAvailable) {
+      return [
+        { id: 'c1', name: 'Nguyễn Thị Lan', phone: '0901234567', createdAt: '2024-01-15', totalSpent: 5600000, debt: 0 },
+        { id: 'c2', name: 'Trần Thị Mai', phone: '0912345678', createdAt: '2024-02-20', totalSpent: 3200000, debt: 500000 }
+      ];
     }
-    return customer;
+    if (query) {
+      const q = `%${query.toLowerCase()}%`;
+      const result = await pool.query(
+        `SELECT id, name, phone, created_at as "createdAt", total_spent as "totalSpent", debt
+         FROM customers
+         WHERE LOWER(name) LIKE $1 OR phone LIKE $1
+         ORDER BY created_at DESC`,
+        [q]
+      );
+      return result.rows;
+    }
+    const result = await pool.query(
+      `SELECT id, name, phone, created_at as "createdAt", total_spent as "totalSpent", debt
+       FROM customers
+       ORDER BY created_at DESC`
+    );
+    return result.rows;
   },
 
-  updateCustomerAfterOrder(customerId: string, paid: number, debt: number) {
-    const db = initDB();
-    const c = db.customers.find(c => c.id === customerId);
-    if (c) {
-      c.totalSpent += paid;
-      c.debt += debt;
-      saveDB(global.__db);
+  async getOrders(): Promise<Order[]> {
+    await ensureInitialized();
+    const ordersResult = await pool.query(
+      `SELECT id, date, customer_id as "customerId", customer_name as "customerName",
+             customer_phone as "customerPhone", channel, total_amount as "totalAmount",
+             discount, discount_type as "discountType", must_pay as "mustPay",
+             actual_paid as "actualPaid", debt, note, status, created_at as "createdAt"
+       FROM orders
+       ORDER BY created_at DESC`
+    );
+
+    const orders: Order[] = [];
+    for (const order of ordersResult.rows) {
+      const servicesResult = await pool.query(
+        `SELECT id, type_id as "typeId", type_name as "typeName",
+               detail_id as "detailId", detail_name as "detailName",
+               sessions, price, total
+         FROM order_services
+         WHERE order_id = $1`,
+        [order.id]
+      );
+      orders.push({
+        ...order,
+        services: servicesResult.rows
+      } as Order);
+    }
+    return orders;
+  },
+
+  async getTransactions(): Promise<Transaction[]> {
+    await ensureInitialized();
+    const result = await pool.query(
+      `SELECT id, date, customer_id as "customerId", customer_name as "customerName",
+             customer_phone as "customerPhone", amount, type, order_id as "orderId",
+             note, created_at as "createdAt"
+       FROM transactions
+       ORDER BY created_at DESC`
+    );
+    return result.rows;
+  },
+
+  async getServiceTypes(): Promise<ServiceType[]> {
+    await ensureInitialized();
+    const typesResult = await pool.query(
+      `SELECT id, name
+       FROM service_types
+       ORDER BY id`
+    );
+
+    const serviceTypes: ServiceType[] = [];
+    for (const type of typesResult.rows) {
+      const detailsResult = await pool.query(
+        `SELECT id, name, price
+         FROM service_details
+         WHERE type_id = $1
+         ORDER BY id`,
+        [type.id]
+      );
+      serviceTypes.push({
+        id: type.id,
+        name: type.name,
+        details: detailsResult.rows
+      });
+    }
+    return serviceTypes;
+  },
+
+  async getChannels(): Promise<string[]> {
+    await ensureInitialized();
+    const result = await pool.query(
+      `SELECT name
+       FROM channels
+       ORDER BY id`
+    );
+    return result.rows.map(r => r.name);
+  },
+
+  async addOrder(order: Order): Promise<void> {
+    await ensureInitialized();
+    await pool.query(
+      `INSERT INTO orders (id, date, customer_id, customer_name, customer_phone, channel,
+                          total_amount, discount, discount_type, must_pay, actual_paid,
+                          debt, note, status, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
+      [order.id, order.date, order.customerId, order.customerName, order.customerPhone,
+       order.channel, order.totalAmount, order.discount, order.discountType, order.mustPay,
+       order.actualPaid, order.debt, order.note, order.status, order.createdAt]
+    );
+
+    for (const service of order.services) {
+      await pool.query(
+        `INSERT INTO order_services (id, order_id, type_id, type_name, detail_id,
+                                    detail_name, sessions, price, total)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+        [service.id, order.id, service.typeId, service.typeName, service.detailId,
+         service.detailName, service.sessions, service.price, service.total]
+      );
     }
   },
 
-  updateCustomerDebtAfterCollection(customerId: string, amount: number) {
-    const db = initDB();
-    const c = db.customers.find(c => c.id === customerId);
-    if (c) {
-      c.debt = Math.max(0, c.debt - amount);
-      c.totalSpent += amount;
-      saveDB(global.__db);
-    }
+  async addTransaction(tx: Transaction): Promise<void> {
+    await ensureInitialized();
+    await pool.query(
+      `INSERT INTO transactions (id, date, customer_id, customer_name, customer_phone,
+                                amount, type, order_id, note, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+      [tx.id, tx.date, tx.customerId, tx.customerName, tx.customerPhone,
+       tx.amount, tx.type, tx.orderId || null, tx.note, tx.createdAt]
+    );
   },
 
-  addServiceType(st: ServiceType) { initDB().serviceTypes.push(st); saveDB(global.__db); },
-  addServiceDetail(typeId: string, detail: ServiceDetail) {
-    const st = initDB().serviceTypes.find(s => s.id === typeId);
-    if (st) { st.details.push(detail); saveDB(global.__db); }
+  async addCustomer(c: Customer): Promise<void> {
+    await ensureInitialized();
+    await pool.query(
+      `INSERT INTO customers (id, name, phone, created_at, total_spent, debt)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [c.id, c.name, c.phone, c.createdAt, c.totalSpent, c.debt]
+    );
   },
-  deleteServiceType(typeId: string) {
-    const db = initDB();
-    db.serviceTypes = db.serviceTypes.filter(s => s.id !== typeId);
-    saveDB(global.__db);
+
+  async findOrCreateCustomer(phone: string, name: string): Promise<Customer> {
+    await ensureInitialized();
+    const existing = await pool.query(
+      `SELECT id, name, phone, created_at as "createdAt", total_spent as "totalSpent", debt
+       FROM customers
+       WHERE phone = $1`,
+      [phone]
+    );
+
+    if (existing.rows.length > 0) {
+      const customer = existing.rows[0];
+      if (customer.name !== name) {
+        await pool.query(
+          `UPDATE customers SET name = $1 WHERE phone = $2`,
+          [name, phone]
+        );
+        customer.name = name;
+      }
+      return customer;
+    }
+
+    const newCustomer: Customer = {
+      id: `c${Date.now()}`,
+      name,
+      phone,
+      createdAt: new Date().toISOString().split('T')[0],
+      totalSpent: 0,
+      debt: 0,
+    };
+
+    await pool.query(
+      `INSERT INTO customers (id, name, phone, created_at, total_spent, debt)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [newCustomer.id, newCustomer.name, newCustomer.phone,
+       newCustomer.createdAt, newCustomer.totalSpent, newCustomer.debt]
+    );
+
+    return newCustomer;
   },
-  deleteServiceDetail(typeId: string, detailId: string) {
-    const st = initDB().serviceTypes.find(s => s.id === typeId);
-    if (st) { st.details = st.details.filter(d => d.id !== detailId); saveDB(global.__db); }
+
+  async updateCustomerAfterOrder(customerId: string, paid: number, debt: number): Promise<void> {
+    await ensureInitialized();
+    await pool.query(
+      `UPDATE customers
+       SET total_spent = total_spent + $1,
+           debt = debt + $2
+       WHERE id = $3`,
+      [paid, debt, customerId]
+    );
+  },
+
+  async updateCustomerDebtAfterCollection(customerId: string, amount: number): Promise<void> {
+    await ensureInitialized();
+    await pool.query(
+      `UPDATE customers
+       SET debt = GREATEST(0, debt - $1),
+           total_spent = total_spent + $1
+       WHERE id = $2`,
+      [amount, customerId]
+    );
+  },
+
+  async addServiceType(st: ServiceType): Promise<void> {
+    await ensureInitialized();
+    await pool.query(
+      `INSERT INTO service_types (id, name) VALUES ($1, $2)`,
+      [st.id, st.name]
+    );
+  },
+
+  async addServiceDetail(typeId: string, detail: ServiceDetail): Promise<void> {
+    await ensureInitialized();
+    await pool.query(
+      `INSERT INTO service_details (id, type_id, name, price) VALUES ($1, $2, $3, $4)`,
+      [detail.id, typeId, detail.name, detail.price]
+    );
+  },
+
+  async deleteServiceType(typeId: string): Promise<void> {
+    await ensureInitialized();
+    await pool.query(
+      `DELETE FROM service_types WHERE id = $1`,
+      [typeId]
+    );
+  },
+
+  async deleteServiceDetail(typeId: string, detailId: string): Promise<void> {
+    await ensureInitialized();
+    await pool.query(
+      `DELETE FROM service_details WHERE type_id = $1 AND id = $2`,
+      [typeId, detailId]
+    );
   },
 };

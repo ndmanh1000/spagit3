@@ -7,7 +7,7 @@ export async function GET(req: NextRequest) {
   const to = searchParams.get('to');
   const phone = searchParams.get('phone');
 
-  let txs = [...db.transactions];
+  let txs = await db.getTransactions();
   if (phone) txs = txs.filter(t => t.customerPhone.includes(phone));
   if (from) txs = txs.filter(t => t.date >= from);
   if (to) txs = txs.filter(t => t.date <= to);
@@ -36,8 +36,8 @@ export async function POST(req: NextRequest) {
       createdAt: new Date().toISOString(),
     };
 
-    db.addTransaction(tx);
-    db.updateCustomerDebtAfterCollection(customerId, amount);
+    await db.addTransaction(tx);
+    await db.updateCustomerDebtAfterCollection(customerId, amount);
 
     return NextResponse.json({ transaction: tx });
   } catch (e) {

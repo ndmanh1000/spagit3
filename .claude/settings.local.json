@@ -10,7 +10,24 @@
       "Bash(node *)",
       "Bash(curl *)",
       "Bash(pkill -f \"next dev\")",
-      "Bash(git rm *)"
+      "Bash(git rm *)",
+      "Bash(npm uninstall *)",
+      "Bash(npx tsc *)",
+      "Bash(POSTGRES_URL=\"postgresql://postgres:FSL7QcVtpF3JH98J@db.zqoavjhusaijuobuqyoq.supabase.co:5432/postgres\" node *)",
+      "Bash(ping *)",
+      "Bash(nslookup *)",
+      "Bash(POSTGRES_URL=\"postgresql://postgres.zqoavjhusaijuobuqyoq:FSL7QcVtpF3JH98J@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres\" node *)",
+      "Bash(POSTGRES_URL=\"postgresql://postgres:FSL7QcVtpF3JH98J@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres?sslmode=require\" node *)",
+      "Bash(POSTGRES_URL=\"postgresql://postgres:FSL7QcVtpF3JH98J@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres?sslmode=no-verify\" node *)",
+      "Bash(POSTGRES_URL=\"postgresql://postgres:FSL7QcVtpF3JH98J@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres?workaround=supabase-pooler.vercel\" node *)",
+      "Bash(POSTGRES_URL=\"postgresql://postgres.zqoavjhusaijuobuqyoq:FSL7QcVtpF3JH98J@aws-1-us-east-1.pooler.supabase.com:5432/postgres\" node *)",
+      "Bash(POSTGRES_URL=\"postgresql://postgres:FSL7QcVtpF3JH98J@aws-1-us-east-1.pooler.supabase.com:5432/postgres\" node *)",
+      "Bash(POSTGRES_URL=\"postgresql://postgres.zqoavjhusaijuobuqyoq:wYSxXTU632finU0u@aws-1-us-east-1.pooler.supabase.com:6543/postgres\" node *)",
+      "Bash(POSTGRES_URL=\"postgresql://postgres.zqoavjhusaijuobuqyoq:wYSxXTU632finU0u@aws-1-us-east-1.pooler.supabase.com:5432/postgres\" node *)",
+      "Bash(POSTGRES_URL=\"postgresql://postgres.zqoavjhusaijuobuqyoq:G48Fy0TxXr4YALsu@aws-1-us-east-1.pooler.supabase.com:6543/postgres\" node *)",
+      "Bash(POSTGRES_URL=\"postgresql://postgres:G48Fy0TxXr4YALsu@aws-1-us-east-1.pooler.supabase.com:6543/postgres?options=project%3Dzqoavjhusaijuobuqyoq\" node *)",
+      "Bash(POSTGRES_URL=\"postgresql://postgres:G48Fy0TxXr4YALsu@db.zqoavjhusaijuobuqyoq.supabase.co:5432/postgres\" node *)",
+      "Bash(ipconfig)"
     ]
   }
 }

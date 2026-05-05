@@ -7,7 +7,7 @@ export async function GET(req: NextRequest) {
   const from = searchParams.get('from');
   const to = searchParams.get('to');
 
-  let orders = [...db.orders];
+  let orders = await db.getOrders();
   if (phone) orders = orders.filter(o => o.customerPhone.includes(phone));
   if (from) orders = orders.filter(o => o.date >= from);
   if (to) orders = orders.filter(o => o.date <= to);
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Chưa có dịch vụ' }, { status: 400 });
     }
 
-    const customer = db.findOrCreateCustomer(customerPhone, customerName);
+    const customer = await db.findOrCreateCustomer(customerPhone, customerName);
     const totalAmount = services.reduce((sum: number, s: { total: number }) => sum + s.total, 0);
     const discountAmount = discountType === '%' ? Math.round(totalAmount * discount / 100) : (discount || 0);
     const mustPay = Math.max(0, totalAmount - discountAmount);
@@ -53,11 +53,11 @@ export async function POST(req: NextRequest) {
       createdAt: new Date().toISOString(),
     };
 
-    db.addOrder(order);
-    db.updateCustomerAfterOrder(customer.id, paid, debt);
+    await db.addOrder(order);
+    await db.updateCustomerAfterOrder(customer.id, paid, debt);
 
     if (paid > 0) {
-      db.addTransaction({
+      await db.addTransaction({
         id: `t${Date.now()}`,
         date: order.date,
         customerId: customer.id,

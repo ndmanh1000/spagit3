@@ -19,6 +19,8 @@ export async function POST(req: NextRequest) {
     let imported = 0;
     let skipped = 0;
 
+    const customers = await db.getCustomers();
+
     for (const row of data as any[]) {
       const phone = String(row['SĐT'] || row['SDT'] || row['Phone'] || '').trim();
       const name = String(row['Tên'] || row['Ten'] || row['Name'] || '').trim();
@@ -32,7 +34,7 @@ export async function POST(req: NextRequest) {
         continue;
       }
 
-      const exists = db.customers.find(c => c.phone === phone);
+      const exists = customers.find(c => c.phone === phone);
       if (!exists) {
         const customer = {
           id: `c${Date.now()}_${imported}`,
@@ -42,7 +44,7 @@ export async function POST(req: NextRequest) {
           totalSpent,
           debt,
         };
-        db.addCustomer(customer);
+        await db.addCustomer(customer);
 
         if (services && totalSpent > 0) {
           const order = {
@@ -72,7 +74,7 @@ export async function POST(req: NextRequest) {
             status: debt > 0 ? 'partial' as const : 'paid' as const,
             createdAt: new Date().toISOString(),
           };
-          db.addOrder(order);
+          await db.addOrder(order);
         }
 
         imported++;

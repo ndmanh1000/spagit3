@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db, ServiceType, ServiceDetail } from '@/lib/db';
 
 export async function GET() {
-  return NextResponse.json({ serviceTypes: db.serviceTypes, channels: db.channels });
+  const serviceTypes = await db.getServiceTypes();
+  const channels = await db.getChannels();
+  return NextResponse.json({ serviceTypes, channels });
 }
 
 export async function POST(req: NextRequest) {
@@ -15,7 +17,7 @@ export async function POST(req: NextRequest) {
       name: body.name,
       details: [],
     };
-    db.addServiceType(st);
+    await db.addServiceType(st);
     return NextResponse.json({ serviceType: st });
   }
 
@@ -25,17 +27,17 @@ export async function POST(req: NextRequest) {
       name: body.name,
       price: body.price,
     };
-    db.addServiceDetail(body.typeId, detail);
+    await db.addServiceDetail(body.typeId, detail);
     return NextResponse.json({ detail });
   }
 
   if (action === 'deleteType') {
-    db.deleteServiceType(body.typeId);
+    await db.deleteServiceType(body.typeId);
     return NextResponse.json({ ok: true });
   }
 
   if (action === 'deleteDetail') {
-    db.deleteServiceDetail(body.typeId, body.detailId);
+    await db.deleteServiceDetail(body.typeId, body.detailId);
     return NextResponse.json({ ok: true });
   }
 

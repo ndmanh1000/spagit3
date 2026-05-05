@@ -9,7 +9,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Missing phone' }, { status: 400 });
   }
 
-  const orders = db.orders
+  const allOrders = await db.getOrders();
+  const orders = allOrders
     .filter(o => o.customerPhone === phone)
     .sort((a, b) => b.date.localeCompare(a.date))
     .map(o => ({
